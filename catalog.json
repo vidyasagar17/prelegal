@@ -1,0 +1,79 @@
+{
+  "source": "https://github.com/CommonPaper",
+  "license": "CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+  "description": "Catalog of Common Paper standard legal agreement templates curated for the Prelegal project. All documents are located in the templates/ directory.",
+  "templates": [
+    {
+      "name": "Mutual NDA - Standard Terms",
+      "description": "Common Paper standard Mutual Non-Disclosure Agreement (MNDA) standard terms, used to protect confidential information exchanged between two parties.",
+      "filename": "templates/Mutual-NDA.md",
+      "source_repo": "https://github.com/CommonPaper/Mutual-NDA"
+    },
+    {
+      "name": "Mutual NDA - Cover Page",
+      "description": "Cover page for the Common Paper standard Mutual Non-Disclosure Agreement, where the parties fill in the deal-specific terms that incorporate the standard terms by reference.",
+      "filename": "templates/Mutual-NDA-coverpage.md",
+      "source_repo": "https://github.com/CommonPaper/Mutual-NDA"
+    },
+    {
+      "name": "Cloud Service Agreement",
+      "description": "Common Paper standard Cloud Service Agreement (CSA) governing the provision and use of a cloud/SaaS product.",
+      "filename": "templates/CSA.md",
+      "source_repo": "https://github.com/CommonPaper/CSA"
+    },
+    {
+      "name": "Design Partner Agreement",
+      "description": "Common Paper standard Design Partner Agreement for collaborating with an early customer to develop and refine a product.",
+      "filename": "templates/Design-Partner-Agreement.md",
+      "source_repo": "https://github.com/CommonPaper/Design-Partner-Agreement"
+    },
+    {
+      "name": "Service Level Agreement",
+      "description": "Common Paper standard Service Level Agreement (SLA) defining uptime commitments, support, and remedies for a service.",
+      "filename": "templates/SLA.md",
+      "source_repo": "https://github.com/CommonPaper/SLA"
+    },
+    {
+      "name": "Professional Services Agreement",
+      "description": "Common Paper standard Professional Services Agreement (PSA) covering the delivery of professional or consulting services.",
+      "filename": "templates/PSA.md",
+      "source_repo": "https://github.com/CommonPaper/PSA"
+    },
+    {
+      "name": "Data Processing Agreement",
+      "description": "Common Paper standard Data Processing Agreement (DPA) addressing the processing of personal data and related privacy obligations.",
+      "filename": "templates/DPA.md",
+      "source_repo": "https://github.com/CommonPaper/DPA"
+    },
+    {
+      "name": "Software License Agreement",
+      "description": "Common Paper standard Software License Agreement governing the licensing of software to a customer.",
+      "filename": "templates/Software-License-Agreement.md",
+      "source_repo": "https://github.com/CommonPaper/Software-License-Agreement"
+    },
+    {
+      "name": "Partnership Agreement",
+      "description": "Common Paper standard Partnership Agreement for establishing a business partnership between parties.",
+      "filename": "templates/Partnership-Agreement.md",
+      "source_repo": "https://github.com/CommonPaper/Partnership-Agreement"
+    },
+    {
+      "name": "Pilot Agreement",
+      "description": "Common Paper standard Pilot Agreement for running a time-limited product pilot or proof of concept with a customer.",
+      "filename": "templates/Pilot-Agreement.md",
+      "source_repo": "https://github.com/CommonPaper/Pilot-Agreement"
+    },
+    {
+      "name": "Business Associate Agreement",
+      "description": "Common Paper standard Business Associate Agreement (BAA) for HIPAA-covered handling of protected health information.",
+      "filename": "templates/BAA.md",
+      "source_repo": "https://github.com/CommonPaper/BAA"
+    },
+    {
+      "name": "AI Addendum",
+      "description": "Common Paper standard AI Addendum covering terms specific to the provision and use of AI products and services.",
+      "filename": "templates/AI-Addendum.md",
+      "source_repo": "https://github.com/CommonPaper/AI-Addendum"
+    }
+  ]
+}
