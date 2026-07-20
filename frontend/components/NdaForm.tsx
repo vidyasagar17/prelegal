@@ -9,7 +9,7 @@ interface Props {
 
 const labelCls = "block text-sm font-medium text-slate-700";
 const inputCls =
-  "mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 placeholder:text-slate-400";
+  "mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/30 placeholder:text-slate-400";
 
 function TextField({
   label,
@@ -49,7 +49,7 @@ function Section({
 }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+      <h3 className="text-sm font-semibold text-brand-navy">{title}</h3>
       {description && (
         <p className="mt-1 text-xs text-slate-500">{description}</p>
       )}
@@ -139,7 +139,7 @@ export default function NdaForm({ data, onChange }: Props) {
                 name="mndaTerm"
                 checked={data.mndaTermType === "expires"}
                 onChange={() => set({ mndaTermType: "expires" })}
-                className="accent-indigo-600"
+                className="accent-brand-blue"
               />
               Expires
               <input
@@ -168,7 +168,7 @@ export default function NdaForm({ data, onChange }: Props) {
                 name="mndaTerm"
                 checked={data.mndaTermType === "until_terminated"}
                 onChange={() => set({ mndaTermType: "until_terminated" })}
-                className="accent-indigo-600"
+                className="accent-brand-blue"
               />
               Continues until terminated
             </label>
@@ -185,7 +185,7 @@ export default function NdaForm({ data, onChange }: Props) {
                 name="confTerm"
                 checked={data.confidentialityTermType === "years"}
                 onChange={() => set({ confidentialityTermType: "years" })}
-                className="accent-indigo-600"
+                className="accent-brand-blue"
               />
               <input
                 type="number"
@@ -214,7 +214,7 @@ export default function NdaForm({ data, onChange }: Props) {
                 name="confTerm"
                 checked={data.confidentialityTermType === "perpetuity"}
                 onChange={() => set({ confidentialityTermType: "perpetuity" })}
-                className="accent-indigo-600"
+                className="accent-brand-blue"
               />
               In perpetuity
             </label>

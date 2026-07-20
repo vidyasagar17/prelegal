@@ -69,7 +69,7 @@ export default function NdaPreview({ data }: { data: NdaData }) {
     <article className="mx-auto max-w-2xl bg-white px-8 py-10 font-serif text-[15px] leading-relaxed text-slate-800 sm:px-12">
       {/* Cover Page */}
       <header className="mb-8 border-b border-slate-200 pb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-2xl font-bold tracking-tight text-brand-navy">
           Mutual Non-Disclosure Agreement
         </h1>
         <p className="mt-2 text-sm text-slate-500">
@@ -132,7 +132,7 @@ export default function NdaPreview({ data }: { data: NdaData }) {
 
       {/* Standard Terms */}
       <section>
-        <h2 className="mb-1 text-lg font-bold text-slate-900">Standard Terms</h2>
+        <h2 className="mb-1 text-lg font-bold text-brand-navy">Standard Terms</h2>
         <p className="mb-6 text-xs text-slate-500">
           Common Paper Mutual NDA Standard Terms, Version 1.0
         </p>
