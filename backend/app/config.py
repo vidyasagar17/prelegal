@@ -4,7 +4,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # Read the project-root .env for local dev; env vars still win. In the
+    # container the OPENAI_API_KEY is passed at runtime.
+    model_config = SettingsConfigDict(env_file=("../.env", ".env"), extra="ignore")
 
     # Auth
     jwt_secret: str = "dev-secret-change-me-in-production-please-32b"
@@ -20,6 +22,11 @@ class Settings(BaseSettings):
     # Directory holding the statically-exported frontend. Mounted at "/" when it
     # exists; absent during backend-only test runs.
     frontend_dir: str = "static"
+
+    # LLM (OpenAI platform via LiteLLM). The key comes from the environment or
+    # the project-root .env (openai_api_key), never baked into the image.
+    openai_api_key: str = ""
+    chat_model: str = "openai/gpt-4o-mini"
 
 
 settings = Settings()

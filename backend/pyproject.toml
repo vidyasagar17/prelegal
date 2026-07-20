@@ -10,6 +10,7 @@ dependencies = [
     "bcrypt>=4.2",
     "pydantic-settings>=2.5",
     "email-validator>=2.2",
+    "litellm>=1.55",
 ]
 
 [dependency-groups]
