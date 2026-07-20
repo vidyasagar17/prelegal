@@ -26,6 +26,11 @@ wheels/
 .installed.cfg
 *.egg
 
+# SQLite databases (created fresh at runtime)
+*.db
+*.sqlite
+*.sqlite3
+
 # Virtual environments
 .venv/
 venv/

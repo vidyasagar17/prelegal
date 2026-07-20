@@ -44,7 +44,7 @@ export default function Home() {
       <header className="z-10 flex-none border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div>
-            <h1 className="text-base font-semibold tracking-tight text-slate-900 sm:text-lg">
+            <h1 className="text-base font-semibold tracking-tight text-brand-navy sm:text-lg">
               Mutual NDA Creator
             </h1>
             <p className="hidden text-xs text-slate-500 sm:block">
@@ -55,7 +55,7 @@ export default function Home() {
             type="button"
             onClick={handleDownload}
             disabled={generating}
-            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-brand-purple px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-purple/90 focus:outline-none focus:ring-2 focus:ring-brand-purple/40 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {generating ? (
               <>
