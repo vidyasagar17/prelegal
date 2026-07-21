@@ -1,15 +1,23 @@
 """Chat request/response models.
 
-The extracted-fields shape mirrors the frontend `NdaData` interface exactly
-(camelCase, via aliases) so the model's JSON flows straight into the UI with no
-translation. Every field is required so the response satisfies OpenAI strict
-structured outputs; unknown values are empty strings or sensible defaults.
+Fields are gathered generically as key/value pairs (a list, so the shape works
+with OpenAI strict structured outputs). The keys match the field specs in
+documents.py for the chosen document type.
 """
 
+from enum import Enum
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
+
+from .documents import DOCUMENTS
+
+# Constrain field keys to the ones the catalog actually defines, so the model
+# (via structured outputs) cannot invent or shorten keys the frontend won't
+# recognize.
+_ALL_KEYS = sorted({f.key for d in DOCUMENTS for f in d.fields})
+FieldKey = Enum("FieldKey", {k: k for k in _ALL_KEYS}, type=str)
 
 
 class CamelModel(BaseModel):
@@ -21,39 +29,25 @@ class ChatMessage(CamelModel):
     content: str
 
 
-class ChatParty(CamelModel):
-    company: str
-    signer_name: str
-    signer_title: str
-    notice_address: str
-
-
-class ChatFields(CamelModel):
-    purpose: str
-    effective_date: str  # ISO yyyy-mm-dd, or empty
-    mnda_term_type: Literal["expires", "until_terminated"]
-    mnda_term_years: int
-    confidentiality_term_type: Literal["years", "perpetuity"]
-    confidentiality_term_years: int
-    governing_law: str
-    jurisdiction: str
-    modifications: str
-    party1: ChatParty
-    party2: ChatParty
+class FieldValue(CamelModel):
+    key: FieldKey
+    value: str
 
 
 class ChatResult(CamelModel):
-    """What the model returns each turn: what to say, the current best-known
-    fields, and whether every required field has been gathered."""
+    """What the model returns each turn: what to say, which document is being
+    built, the current known field values, and whether every field is filled."""
 
     reply: str
-    fields: ChatFields
+    document_type: str  # a documents.py id, or "" if not yet chosen
+    fields: list[FieldValue]
     complete: bool
 
 
 class ChatRequest(CamelModel):
     messages: list[ChatMessage]
-    fields: ChatFields
+    document_type: str
+    fields: list[FieldValue]
 
 
 class GreetingResponse(CamelModel):

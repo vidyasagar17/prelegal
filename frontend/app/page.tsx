@@ -2,16 +2,18 @@
 
 import { useEffect, useState } from "react";
 import AuthForm from "@/components/AuthForm";
-import NdaChat from "@/components/NdaChat";
+import DocumentChat from "@/components/DocumentChat";
+import GenericPreview from "@/components/GenericPreview";
 import NdaPreview from "@/components/NdaPreview";
-import { api, User } from "@/lib/api";
-import { defaultNdaData, ndaFileName, NdaData } from "@/lib/nda";
+import { api, DocumentType, User } from "@/lib/api";
+import { ndaDataFromFields } from "@/lib/documentFields";
+
+const NDA_ID = "mutual-nda";
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [checking, setChecking] = useState(true);
 
-  // Check for an existing session on load.
   useEffect(() => {
     api
       .me()
@@ -34,10 +36,18 @@ export default function Home() {
 }
 
 function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void }) {
-  const [data, setData] = useState<NdaData>(defaultNdaData);
+  const [catalog, setCatalog] = useState<DocumentType[]>([]);
+  const [documentType, setDocumentType] = useState("");
+  const [fields, setFields] = useState<Record<string, string>>({});
   const [complete, setComplete] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.catalog().then(setCatalog).catch(() => setError("Could not load document types."));
+  }, []);
+
+  const doc = catalog.find((d) => d.id === documentType);
 
   async function handleSignOut() {
     try {
@@ -48,20 +58,23 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
   }
 
   async function handleDownload() {
+    if (!doc) return;
     setGenerating(true);
     setError(null);
     try {
-      // Loaded on demand so the PDF engine never runs during SSR.
-      const { generateNdaPdfBlob } = await import("@/lib/ndaPdf");
-      const blob = await generateNdaPdfBlob(data);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${ndaFileName(data)}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      // PDF engines are loaded on demand so they never run during SSR.
+      if (doc.id === NDA_ID) {
+        const { generateNdaPdfBlob } = await import("@/lib/ndaPdf");
+        const { ndaFileName } = await import("@/lib/nda");
+        const data = ndaDataFromFields(fields);
+        await downloadBlob(await generateNdaPdfBlob(data), `${ndaFileName(data)}.pdf`);
+      } else {
+        const { generateDocumentPdfBlob, documentFileName } = await import("@/lib/genericPdf");
+        await downloadBlob(
+          await generateDocumentPdfBlob(doc, fields),
+          `${documentFileName(doc, fields)}.pdf`,
+        );
+      }
     } catch (err) {
       console.error(err);
       setError("Something went wrong generating the PDF. Please try again.");
@@ -76,17 +89,17 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div>
             <h1 className="text-base font-semibold tracking-tight text-brand-navy sm:text-lg">
-              Mutual NDA Creator
+              Prelegal
             </h1>
             <p className="hidden text-xs text-slate-500 sm:block">
-              Chat with the assistant to fill in your agreement, then download it as a PDF.
+              Chat with the assistant to draft your agreement, then download it as a PDF.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={handleDownload}
-              disabled={generating || !complete}
+              disabled={generating || !complete || !doc}
               title={complete ? "Download PDF" : "Available once all details are gathered"}
               className="inline-flex items-center gap-2 rounded-lg bg-brand-purple px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-purple/90 focus:outline-none focus:ring-2 focus:ring-brand-purple/40 disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -127,10 +140,12 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
             Assistant
           </h2>
           <div className="min-h-[24rem] lg:min-h-0 lg:flex-1">
-            <NdaChat
-              fields={data}
-              onExtract={(fields, isComplete) => {
-                setData(fields);
+            <DocumentChat
+              documentType={documentType}
+              fields={fields}
+              onResult={(type, newFields, isComplete) => {
+                setDocumentType(type);
+                setFields(newFields);
                 setComplete(isComplete);
               }}
             />
@@ -142,13 +157,24 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
             Live preview
           </h2>
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-black/5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-            <NdaPreview data={data} />
+            {doc ? (
+              doc.id === NDA_ID ? (
+                <NdaPreview data={ndaDataFromFields(fields)} />
+              ) : (
+                <GenericPreview doc={doc} fields={fields} />
+              )
+            ) : (
+              <div className="flex h-full items-center justify-center p-10 text-center text-sm text-slate-400">
+                Tell the assistant which document you&apos;d like to create and it
+                will appear here.
+              </div>
+            )}
           </div>
         </section>
       </main>
 
       <footer className="mx-auto max-w-7xl flex-none px-4 pb-4 pt-2 text-center text-xs text-slate-400 sm:px-6">
-        Based on the Common Paper Mutual NDA (Version 1.0), free to use under{" "}
+        Based on Common Paper templates, free to use under{" "}
         <a
           href="https://creativecommons.org/licenses/by/4.0/"
           className="underline hover:text-slate-600"
@@ -161,6 +187,17 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
       </footer>
     </div>
   );
+}
+
+async function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 function DownloadIcon() {

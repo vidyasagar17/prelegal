@@ -1,47 +1,22 @@
-from app.chat_schemas import ChatFields, ChatParty, ChatResult
+from app.chat_schemas import ChatResult, FieldValue
 
 CREDENTIALS = {"email": "chat@example.com", "password": "sup3r-secret"}
-
-EMPTY_PARTY = {
-    "company": "",
-    "signerName": "",
-    "signerTitle": "",
-    "noticeAddress": "",
-}
-EMPTY_FIELDS = {
-    "purpose": "",
-    "effectiveDate": "",
-    "mndaTermType": "expires",
-    "mndaTermYears": 1,
-    "confidentialityTermType": "years",
-    "confidentialityTermYears": 1,
-    "governingLaw": "",
-    "jurisdiction": "",
-    "modifications": "",
-    "party1": EMPTY_PARTY,
-    "party2": EMPTY_PARTY,
-}
 
 
 def _signup(client):
     client.post("/api/auth/signup", json=CREDENTIALS)
 
 
-def _empty_fields() -> ChatFields:
-    party = ChatParty(company="", signer_name="", signer_title="", notice_address="")
-    return ChatFields(
-        purpose="",
-        effective_date="",
-        mnda_term_type="expires",
-        mnda_term_years=1,
-        confidentiality_term_type="years",
-        confidentiality_term_years=1,
-        governing_law="",
-        jurisdiction="",
-        modifications="",
-        party1=party,
-        party2=party,
-    )
+def test_catalog_is_public_and_lists_all_types(client):
+    response = client.get("/api/catalog")
+    assert response.status_code == 200
+    docs = response.json()
+    assert len(docs) == 11
+    ids = {d["id"] for d in docs}
+    assert {"mutual-nda", "csa", "pilot", "baa", "ai-addendum"} <= ids
+    # Each type exposes labelled fields.
+    nda = next(d for d in docs if d["id"] == "mutual-nda")
+    assert any(f["key"] == "party1Company" for f in nda["fields"])
 
 
 def test_greeting_requires_auth(client):
@@ -57,31 +32,41 @@ def test_greeting_returns_message_when_authed(client):
 
 def test_message_requires_auth(client):
     response = client.post(
-        "/api/chat/message", json={"messages": [], "fields": EMPTY_FIELDS}
+        "/api/chat/message", json={"messages": [], "documentType": "", "fields": []}
     )
     assert response.status_code == 401
 
 
-def test_message_returns_reply_and_fields(client, monkeypatch):
+def test_message_returns_reply_type_and_fields(client, monkeypatch):
     _signup(client)
 
-    fields = _empty_fields()
-    fields.party1.company = "Acme Inc"
-    fields.governing_law = "Delaware"
-    canned = ChatResult(reply="Got it. What's the purpose?", fields=fields, complete=False)
-    monkeypatch.setattr("app.routers.chat.complete_chat", lambda messages, fields: canned)
+    canned = ChatResult(
+        reply="Got it. What's the pilot period?",
+        document_type="pilot",
+        fields=[
+            FieldValue(key="providerName", value="Acme"),
+            FieldValue(key="customerName", value="Globex"),
+        ],
+        complete=False,
+    )
+    monkeypatch.setattr(
+        "app.routers.chat.complete_chat",
+        lambda messages, document_type, fields: canned,
+    )
 
     response = client.post(
         "/api/chat/message",
         json={
-            "messages": [{"role": "user", "content": "Acme Inc, Delaware law"}],
-            "fields": EMPTY_FIELDS,
+            "messages": [{"role": "user", "content": "A pilot for Acme and Globex"}],
+            "documentType": "",
+            "fields": [],
         },
     )
     assert response.status_code == 200
     body = response.json()
-    assert body["reply"] == "Got it. What's the purpose?"
+    assert body["reply"].endswith("?")
+    assert body["documentType"] == "pilot"
     assert body["complete"] is False
-    # Response is camelCase and mirrors the frontend NdaData shape.
-    assert body["fields"]["party1"]["company"] == "Acme Inc"
-    assert body["fields"]["governingLaw"] == "Delaware"
+    values = {f["key"]: f["value"] for f in body["fields"]}
+    assert values["providerName"] == "Acme"
+    assert values["customerName"] == "Globex"
