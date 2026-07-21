@@ -1,11 +1,22 @@
 // Thin client for the backend API. All requests send cookies so the HttpOnly
 // session token is included automatically.
 
-import { NdaData } from "./nda";
-
 export interface User {
   id: number;
   email: string;
+}
+
+export interface FieldSpec {
+  key: string;
+  label: string;
+  description: string;
+}
+
+export interface DocumentType {
+  id: string;
+  name: string;
+  description: string;
+  fields: FieldSpec[];
 }
 
 export interface ChatMessage {
@@ -13,9 +24,15 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface FieldValue {
+  key: string;
+  value: string;
+}
+
 export interface ChatResult {
   reply: string;
-  fields: NdaData;
+  documentType: string;
+  fields: FieldValue[];
   complete: boolean;
 }
 
@@ -55,10 +72,18 @@ export const api = {
   signin: (email: string, password: string) =>
     request<User>("/api/auth/signin", { method: "POST", body: body({ email, password }) }),
   signout: () => request<{ detail: string }>("/api/auth/signout", { method: "POST" }),
+  catalog: () => request<DocumentType[]>("/api/catalog"),
   greeting: () => request<{ message: string }>("/api/chat/greeting"),
-  chat: (messages: ChatMessage[], fields: NdaData) =>
+  chat: (messages: ChatMessage[], documentType: string, fields: FieldValue[]) =>
     request<ChatResult>("/api/chat/message", {
       method: "POST",
-      body: body({ messages, fields }),
+      body: body({ messages, documentType, fields }),
     }),
 };
+
+// Fields travel over the wire as a list; the UI works with a plain map.
+export const fieldsToMap = (fields: FieldValue[]): Record<string, string> =>
+  Object.fromEntries(fields.map((f) => [f.key, f.value]));
+
+export const mapToFields = (map: Record<string, string>): FieldValue[] =>
+  Object.entries(map).map(([key, value]) => ({ key, value }));

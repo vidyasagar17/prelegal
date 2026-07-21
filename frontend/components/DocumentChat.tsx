@@ -1,20 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { api, ApiError, ChatMessage } from "@/lib/api";
-import { NdaData } from "@/lib/nda";
+import { api, ApiError, ChatMessage, fieldsToMap, mapToFields } from "@/lib/api";
 
 interface Props {
-  fields: NdaData;
-  onExtract: (fields: NdaData, complete: boolean) => void;
+  documentType: string;
+  fields: Record<string, string>;
+  onResult: (documentType: string, fields: Record<string, string>, complete: boolean) => void;
 }
 
 /**
- * Freeform chat that gathers the NDA details. Each turn sends the transcript
- * plus the current fields to the backend and lifts the model's extracted
- * fields back up so the live preview stays in sync.
+ * Freeform chat that figures out which document the user wants and gathers its
+ * fields. Each turn sends the transcript plus the current document type and
+ * fields; the model's updated values are lifted up so the live preview stays in
+ * sync.
  */
-export default function NdaChat({ fields, onExtract }: Props) {
+export default function DocumentChat({ documentType, fields, onResult }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -23,7 +24,6 @@ export default function NdaChat({ fields, onExtract }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Fetch the opening message once.
   useEffect(() => {
     api
       .greeting()
@@ -46,15 +46,16 @@ export default function NdaChat({ fields, onExtract }: Props) {
     setBusy(true);
     setError(null);
     try {
-      const result = await api.chat(next, fields);
+      const result = await api.chat(next, documentType, mapToFields(fields));
       setMessages([...next, { role: "assistant", content: result.reply }]);
-      onExtract(result.fields, result.complete);
+      onResult(result.documentType, fieldsToMap(result.fields), result.complete);
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Something went wrong. Please try again.",
       );
     } finally {
       setBusy(false);
+      // Return focus to the input so the user can keep typing.
       inputRef.current?.focus();
     }
   }
@@ -103,9 +104,7 @@ function Bubble({ role, content }: { role: "user" | "assistant"; content: string
       <div
         className={
           "max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm " +
-          (isUser
-            ? "bg-brand-blue text-white"
-            : "bg-slate-100 text-slate-800")
+          (isUser ? "bg-brand-blue text-white" : "bg-slate-100 text-slate-800")
         }
       >
         {content}

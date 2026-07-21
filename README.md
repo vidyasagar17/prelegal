@@ -4,10 +4,13 @@ Draft legal agreements from standard templates. Prelegal packages a Next.js
 frontend and a FastAPI backend into a single Docker container that serves the
 whole product at http://localhost:8000.
 
-The current product is the **Mutual NDA Creator**: sign in, then chat with an AI
-assistant that asks about the deal, fills in the agreement as you answer,
-previews it live, and lets you download it as a PDF. Accounts are backed by
-SQLite; the AI runs on the OpenAI platform via LiteLLM.
+Sign in, then chat with an AI assistant that works out which of the **11
+supported agreements** you need (Mutual NDA, Cloud Service Agreement, Pilot
+Agreement, and more), asks about the relevant fields, previews the document
+live, and lets you download it as a PDF. The Mutual NDA has a rich, dedicated
+preview with full standard terms; the other documents use a generic
+cover-page preview. Accounts are backed by SQLite; the AI runs on the OpenAI
+platform via LiteLLM.
 
 ## Architecture
 
@@ -51,6 +54,7 @@ http://localhost:8000.
 - `POST /api/auth/signin` — sign in (sets an HttpOnly session cookie)
 - `POST /api/auth/signout` — clear the session cookie
 - `GET  /api/auth/me` — the current signed-in user
+- `GET  /api/catalog` — the supported document types and their fields (public)
 - `GET  /api/chat/greeting` — the assistant's opening message (auth required)
 - `POST /api/chat/message` — send the transcript and current fields, get the
   reply plus updated fields (auth required)
