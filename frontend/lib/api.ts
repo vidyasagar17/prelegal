@@ -49,6 +49,7 @@ export interface DocumentSummary {
 export interface SavedDocument extends DocumentSummary {
   fields: FieldValue[];
   transcript: ChatMessage[];
+  notes: string;
 }
 
 export interface DocumentSave {
@@ -56,6 +57,7 @@ export interface DocumentSave {
   documentType: string;
   fields: FieldValue[];
   transcript: ChatMessage[];
+  notes: string;
   complete: boolean;
 }
 

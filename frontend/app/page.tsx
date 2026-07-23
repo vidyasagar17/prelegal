@@ -32,8 +32,8 @@ export default function Home() {
 
   if (checking) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-slate-100 text-sm text-slate-500">
-        Loading…
+      <div className="flex min-h-dvh items-center justify-center text-sm text-ink/50">
+        <span className="font-display text-lg italic text-brand-navy">Prelegal</span>
       </div>
     );
   }
@@ -59,6 +59,7 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
   const [fields, setFields] = useState<Record<string, string>>({});
   const [complete, setComplete] = useState(false);
   const [transcript, setTranscript] = useState<ChatMessage[]>([]);
+  const [notes, setNotes] = useState("");
   const [chatKey, setChatKey] = useState(0);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [generating, setGenerating] = useState(false);
@@ -85,30 +86,31 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
     setFields({});
     setComplete(false);
     setTranscript([]);
+    setNotes("");
     setSaveState("idle");
     setChatKey((k) => k + 1);
   }
 
-  async function handleResult(
-    type: string,
-    newFields: Record<string, string>,
-    isComplete: boolean,
-    messages: ChatMessage[],
-  ) {
-    setDocumentType(type);
-    setFields(newFields);
-    setComplete(isComplete);
-    setTranscript(messages);
-
-    const spec = catalog.find((d) => d.id === type);
-    if (!type || !spec) return; // Nothing worth saving until a type is chosen.
+  // Create-or-update the current draft. Used by both the per-turn autosave and
+  // the explicit Save button, so notes edits (which don't trigger a chat turn)
+  // still get persisted.
+  async function persist(draft: {
+    type: string;
+    fields: Record<string, string>;
+    complete: boolean;
+    transcript: ChatMessage[];
+    notes: string;
+  }) {
+    const spec = catalog.find((d) => d.id === draft.type);
+    if (!draft.type || !spec) return; // Nothing worth saving until a type is chosen.
 
     const payload = {
-      title: makeTitle(spec, newFields),
-      documentType: type,
-      fields: mapToFields(newFields),
-      transcript: messages,
-      complete: isComplete,
+      title: makeTitle(spec, draft.fields),
+      documentType: draft.type,
+      fields: mapToFields(draft.fields),
+      transcript: draft.transcript,
+      notes: draft.notes,
+      complete: draft.complete,
     };
     setSaveState("saving");
     try {
@@ -125,6 +127,23 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
     }
   }
 
+  async function handleResult(
+    type: string,
+    newFields: Record<string, string>,
+    isComplete: boolean,
+    messages: ChatMessage[],
+  ) {
+    setDocumentType(type);
+    setFields(newFields);
+    setComplete(isComplete);
+    setTranscript(messages);
+    await persist({ type, fields: newFields, complete: isComplete, transcript: messages, notes });
+  }
+
+  async function handleSave() {
+    await persist({ type: documentType, fields, complete, transcript, notes });
+  }
+
   async function handleLoad(id: number) {
     if (id === currentIdRef.current) return;
     try {
@@ -134,6 +153,7 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
       setFields(Object.fromEntries(saved.fields.map((f) => [f.key, f.value])));
       setComplete(saved.complete);
       setTranscript(saved.transcript);
+      setNotes(saved.notes);
       setSaveState("saved");
       setChatKey((k) => k + 1); // Remount the chat with the restored transcript.
     } catch {
@@ -186,56 +206,61 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-slate-100 text-slate-900 lg:h-dvh">
-      <header className="z-10 flex-none border-b border-slate-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <div>
-            <h1 className="text-base font-semibold tracking-tight text-brand-navy sm:text-lg">
-              Prelegal
-            </h1>
-            <p className="hidden text-xs text-slate-500 sm:block">
-              Chat with the assistant to draft your agreement, then download it as a PDF.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <SaveIndicator state={saveState} />
-            <button
-              type="button"
-              onClick={handleDownload}
-              disabled={generating || !complete || !doc}
-              title={complete ? "Download PDF" : "Available once all details are gathered"}
-              className="inline-flex items-center gap-2 rounded-lg bg-brand-purple px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-purple/90 focus:outline-none focus:ring-2 focus:ring-brand-purple/40 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {generating ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                  Generating…
-                </>
-              ) : (
-                <>
-                  <DownloadIcon />
-                  Download PDF
-                </>
-              )}
-            </button>
-            <div className="hidden text-right sm:block">
-              <div className="text-xs font-medium text-slate-700">{user.email}</div>
+    <div className="flex min-h-dvh flex-col text-ink lg:h-dvh">
+      <header className="z-10 flex-none">
+        {/* Letterhead: serif wordmark on ink, closed by a seal-gold rule. */}
+        <div className="bg-brand-navy text-white">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+            <div className="flex items-baseline gap-3">
+              <h1 className="font-display text-2xl font-semibold tracking-tight text-white">
+                Prelegal
+              </h1>
+              <span className="hidden text-[10px] font-medium uppercase tracking-[0.3em] text-seal sm:inline">
+                Drafting desk
+              </span>
+            </div>
+            <div className="flex items-center gap-3 sm:gap-4">
+              <SaveIndicator state={saveState} />
               <button
                 type="button"
-                onClick={handleSignOut}
-                className="text-xs text-brand-blue hover:underline"
+                onClick={handleDownload}
+                disabled={generating || !complete || !doc}
+                title={complete ? "Download PDF" : "Available once all details are gathered"}
+                className="inline-flex items-center gap-2 rounded-lg bg-brand-purple px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-purple/90 focus:outline-none focus:ring-2 focus:ring-brand-purple/50 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Sign out
+                {generating ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    Generating…
+                  </>
+                ) : (
+                  <>
+                    <DownloadIcon />
+                    Download PDF
+                  </>
+                )}
               </button>
+              <div className="hidden text-right sm:block">
+                <div className="text-xs font-medium text-white/80">{user.email}</div>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="text-xs text-white/60 underline-offset-2 transition hover:text-white hover:underline"
+                >
+                  Sign out
+                </button>
+              </div>
             </div>
           </div>
+          <div className="h-0.5 w-full bg-seal" />
         </div>
-        <div className="border-t border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-800 sm:px-6">
-          Draft only. Documents generated here are not legal advice and should be
-          reviewed by a qualified attorney before use.
+        {/* Standing notice — legally important, kept calm and readable. */}
+        <div className="border-b border-paper-edge bg-paper px-4 py-2 text-center text-xs text-ink/70 sm:px-6">
+          <span className="font-semibold text-brand-navy">Draft.</span>{" "}
+          Not legal advice — have a qualified attorney review before use.
         </div>
         {error && (
-          <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-center text-xs text-red-700 sm:px-6">
+          <div className="border-b border-red-200 bg-red-50 px-4 py-2 text-center text-xs text-red-700 sm:px-6">
             {error}
           </div>
         )}
@@ -243,9 +268,7 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
 
       <main className="mx-auto grid w-full max-w-7xl flex-1 grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:min-h-0 lg:grid-cols-[220px_minmax(0,420px)_1fr] lg:overflow-hidden">
         <section className="flex flex-col lg:min-h-0">
-          <h2 className="mb-3 flex-none text-sm font-semibold uppercase tracking-wider text-slate-500">
-            My documents
-          </h2>
+          <SectionLabel>My documents</SectionLabel>
           <div className="min-h-[16rem] lg:min-h-0 lg:flex-1">
             <DocumentsPanel
               documents={documents}
@@ -258,9 +281,7 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
         </section>
 
         <section className="flex flex-col lg:min-h-0">
-          <h2 className="mb-3 flex-none text-sm font-semibold uppercase tracking-wider text-slate-500">
-            Assistant
-          </h2>
+          <SectionLabel>Assistant</SectionLabel>
           <div className="min-h-[24rem] lg:min-h-0 lg:flex-1">
             <DocumentChat
               key={chatKey}
@@ -270,13 +291,34 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
               onResult={handleResult}
             />
           </div>
+          <div className="mt-3 flex-none rounded-2xl border border-paper-edge bg-paper p-3 shadow-sm">
+            <div className="mb-2 flex items-center justify-between">
+              <label htmlFor="doc-notes" className="text-xs font-semibold uppercase tracking-[0.15em] text-ink/45">
+                Notes
+              </label>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={!documentType || saveState === "saving"}
+                className="rounded-lg bg-brand-purple px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-purple/90 focus:outline-none focus:ring-2 focus:ring-brand-purple/40 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {saveState === "saving" ? "Saving…" : "Save"}
+              </button>
+            </div>
+            <textarea
+              id="doc-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Private notes for this document — reminders, review items, who to follow up with…"
+              rows={3}
+              className="block w-full resize-y rounded-lg border border-paper-edge bg-white px-3 py-2 text-sm text-ink shadow-sm outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/25"
+            />
+          </div>
         </section>
 
         <section className="flex flex-col lg:min-h-0">
-          <h2 className="mb-3 flex-none text-sm font-semibold uppercase tracking-wider text-slate-500">
-            Live preview
-          </h2>
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-black/5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+          <SectionLabel>Live preview</SectionLabel>
+          <div className="rounded-2xl border border-paper-edge bg-paper shadow-sm lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
             {doc ? (
               doc.id === NDA_ID ? (
                 <NdaPreview data={ndaDataFromFields(fields)} />
@@ -284,28 +326,62 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
                 <GenericPreview doc={doc} fields={fields} />
               )
             ) : (
-              <div className="flex h-full items-center justify-center p-10 text-center text-sm text-slate-400">
-                Tell the assistant which document you&apos;d like to create and it
-                will appear here.
+              <div className="flex h-full flex-col items-center justify-center gap-3 p-10 text-center">
+                <SheetIcon />
+                <p className="max-w-xs text-sm text-ink/45">
+                  Tell the assistant which document you&apos;d like and a live draft
+                  appears here.
+                </p>
               </div>
             )}
           </div>
         </section>
       </main>
 
-      <footer className="mx-auto max-w-7xl flex-none px-4 pb-4 pt-2 text-center text-xs text-slate-400 sm:px-6">
+      <footer className="mx-auto max-w-7xl flex-none px-4 pb-4 pt-2 text-center text-xs text-ink/40 sm:px-6">
         Based on Common Paper templates, free to use under{" "}
         <a
           href="https://creativecommons.org/licenses/by/4.0/"
-          className="underline hover:text-slate-600"
+          className="text-brand-blue underline-offset-2 hover:underline"
           target="_blank"
           rel="noopener noreferrer"
         >
           CC BY 4.0
         </a>
-        . This tool is a prototype and does not constitute legal advice.
+        . A prototype — not legal advice.
       </footer>
     </div>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="mb-3 flex flex-none items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-ink/45">
+      <span className="h-px w-4 bg-seal" />
+      {children}
+    </h2>
+  );
+}
+
+function SheetIcon() {
+  return (
+    <svg
+      width="34"
+      height="34"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className="text-ink/25"
+    >
+      <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+      <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
+      <line x1="9" y1="13" x2="15" y2="13" />
+      <line x1="9" y1="17" x2="13" y2="17" />
+    </svg>
   );
 }
 
@@ -313,8 +389,7 @@ function SaveIndicator({ state }: { state: SaveState }) {
   if (state === "idle") return null;
   const label =
     state === "saving" ? "Saving…" : state === "saved" ? "Saved" : "Not saved";
-  const color =
-    state === "error" ? "text-red-600" : "text-slate-400";
+  const color = state === "error" ? "text-red-300" : "text-white/60";
   return <span className={`hidden text-xs sm:block ${color}`}>{label}</span>;
 }
 

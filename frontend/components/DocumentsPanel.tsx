@@ -19,8 +19,8 @@ export default function DocumentsPanel({
   onDelete,
 }: Props) {
   return (
-    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex-none border-b border-slate-200 p-3">
+    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-paper-edge bg-paper shadow-sm">
+      <div className="flex-none border-b border-paper-edge p-3">
         <button
           type="button"
           onClick={onNew}
@@ -32,7 +32,7 @@ export default function DocumentsPanel({
 
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
         {documents.length === 0 ? (
-          <p className="p-4 text-center text-xs text-slate-400">
+          <p className="p-4 text-center text-xs text-ink/40">
             Your saved documents will appear here as you chat.
           </p>
         ) : (
@@ -43,8 +43,8 @@ export default function DocumentsPanel({
                   className={
                     "group flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition " +
                     (doc.id === currentId
-                      ? "bg-brand-blue/10 ring-1 ring-brand-blue/30"
-                      : "hover:bg-slate-100")
+                      ? "bg-white ring-1 ring-brand-blue/40"
+                      : "hover:bg-white/70")
                   }
                 >
                   <button
@@ -52,10 +52,10 @@ export default function DocumentsPanel({
                     onClick={() => onLoad(doc.id)}
                     className="min-w-0 flex-1 text-left"
                   >
-                    <span className="block truncate font-medium text-slate-800">
+                    <span className="block truncate font-medium text-ink">
                       {doc.title}
                     </span>
-                    <span className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
+                    <span className="mt-0.5 flex items-center gap-2 text-xs text-ink/40">
                       <span
                         className={
                           "inline-block rounded-full px-1.5 py-0.5 text-[10px] font-semibold " +
@@ -74,7 +74,7 @@ export default function DocumentsPanel({
                     onClick={() => onDelete(doc.id)}
                     title="Delete document"
                     aria-label={`Delete ${doc.title}`}
-                    className="flex-none rounded p-1 text-slate-300 opacity-0 transition hover:bg-red-50 hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
+                    className="flex-none rounded p-1 text-ink/25 opacity-0 transition hover:bg-red-50 hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
                   >
                     <TrashIcon />
                   </button>
