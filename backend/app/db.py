@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS documents (
     document_type TEXT NOT NULL,
     fields        TEXT NOT NULL,  -- JSON: [{key, value}, ...]
     transcript    TEXT NOT NULL,  -- JSON: [{role, content}, ...]
+    notes         TEXT NOT NULL DEFAULT '',
     complete      INTEGER NOT NULL DEFAULT 0,
     created_at    TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at    TEXT NOT NULL DEFAULT (datetime('now'))

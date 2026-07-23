@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f1f5f9; /* slate-100 */
-  --foreground: #0f172a; /* slate-900 */
+  /* Cool "legal paper" canvas and ink, rather than cold slate. */
+  --background: #eaeef3;
+  --foreground: #0b1f38;
 }
 
 @theme inline {
@@ -10,7 +11,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-serif: Georgia, "Times New Roman", serif;
+  --font-serif: var(--font-spectral), Georgia, "Times New Roman", serif;
 
   /* Prelegal brand palette */
   --color-brand-yellow: #ecad0a;
@@ -18,10 +19,21 @@
   --color-brand-purple: #753991;
   --color-brand-navy: #032147;
   --color-brand-gray: #888888;
+
+  /* Surfaces derived from the brand for a cohesive "drafting table" system. */
+  --color-ink: #0b1f38; /* body ink, slightly lifted from pure navy */
+  --color-paper: #f8fafc; /* card / sheet surface */
+  --color-paper-edge: #d9e0ea; /* hairline rules and card borders */
+  --color-seal: #ecad0a; /* letterhead / seal accent, used sparingly */
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* The engraved-letterhead wordmark and serif eyebrows. */
+.font-display {
+  font-family: var(--font-serif);
 }

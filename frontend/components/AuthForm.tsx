@@ -32,36 +32,49 @@ export default function AuthForm({ onAuthed }: { onAuthed: (user: User) => void 
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-slate-100 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-xl font-semibold tracking-tight text-brand-navy">
-          Prelegal
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {isSignup ? "Create an account to start drafting." : "Sign in to continue."}
-        </p>
+    <div className="flex min-h-dvh items-center justify-center px-4 py-10">
+      <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-paper-edge bg-paper shadow-[0_1px_2px_rgba(3,33,71,0.04),0_12px_40px_-12px_rgba(3,33,71,0.25)]">
+        {/* Engraved letterhead: serif wordmark over a fine seal-gold rule. */}
+        <div className="px-8 pt-8">
+          <span className="text-[11px] font-medium uppercase tracking-[0.35em] text-brand-blue">
+            Est. drafting desk
+          </span>
+          <h1 className="font-display mt-2 text-4xl font-semibold tracking-tight text-brand-navy">
+            Prelegal
+          </h1>
+          <div className="mt-3 h-px w-16 bg-seal" />
+          <p className="font-display mt-4 text-base italic text-ink/70">
+            {isSignup
+              ? "Open an account to start drafting."
+              : "Sign in to return to your drafts."}
+          </p>
+        </div>
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-4 px-8 pb-8 pt-6" onSubmit={handleSubmit}>
           <label className="block">
-            <span className="block text-sm font-medium text-slate-700">Email</span>
+            <span className="block text-xs font-semibold uppercase tracking-wider text-ink/60">
+              Email
+            </span>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/30"
+              className="mt-1.5 block w-full rounded-lg border border-paper-edge bg-white px-3 py-2 text-sm text-ink shadow-sm outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/25"
               placeholder="you@company.com"
             />
           </label>
           <label className="block">
-            <span className="block text-sm font-medium text-slate-700">Password</span>
+            <span className="block text-xs font-semibold uppercase tracking-wider text-ink/60">
+              Password
+            </span>
             <input
               type="password"
               required
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/30"
+              className="mt-1.5 block w-full rounded-lg border border-paper-edge bg-white px-3 py-2 text-sm text-ink shadow-sm outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/25"
               placeholder={isSignup ? "At least 8 characters" : "Your password"}
             />
           </label>
@@ -71,13 +84,13 @@ export default function AuthForm({ onAuthed }: { onAuthed: (user: User) => void 
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-lg bg-brand-purple px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-purple/90 focus:outline-none focus:ring-2 focus:ring-brand-purple/40 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-lg bg-brand-purple px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-purple/90 focus:outline-none focus:ring-2 focus:ring-brand-purple/40 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {busy ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
           </button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-slate-500">
+        <div className="border-t border-paper-edge bg-white/60 px-8 py-4 text-center text-sm text-ink/60">
           {isSignup ? "Already have an account?" : "Need an account?"}{" "}
           <button
             type="button"
@@ -89,7 +102,7 @@ export default function AuthForm({ onAuthed }: { onAuthed: (user: User) => void 
           >
             {isSignup ? "Sign in" : "Sign up"}
           </button>
-        </p>
+        </div>
       </div>
     </div>
   );
