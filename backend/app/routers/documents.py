@@ -23,6 +23,7 @@ def _detail(row: sqlite3.Row) -> DocumentDetail:
         updated_at=row["updated_at"],
         fields=json.loads(row["fields"]),
         transcript=json.loads(row["transcript"]),
+        notes=row["notes"],
     )
 
 
@@ -67,13 +68,14 @@ def create_document(
 ):
     cursor = db.execute(
         "INSERT INTO documents (user_id, title, document_type, fields, transcript, "
-        "complete) VALUES (?, ?, ?, ?, ?, ?)",
+        "notes, complete) VALUES (?, ?, ?, ?, ?, ?, ?)",
         (
             user.id,
             body.title,
             body.document_type,
             json.dumps([f.model_dump() for f in body.fields]),
             json.dumps([m.model_dump() for m in body.transcript]),
+            body.notes,
             int(body.complete),
         ),
     )
@@ -100,13 +102,14 @@ def update_document(
     _owned_row(doc_id, user.id, db)
     db.execute(
         "UPDATE documents SET title = ?, document_type = ?, fields = ?, "
-        "transcript = ?, complete = ?, updated_at = datetime('now') "
+        "transcript = ?, notes = ?, complete = ?, updated_at = datetime('now') "
         "WHERE id = ? AND user_id = ?",
         (
             body.title,
             body.document_type,
             json.dumps([f.model_dump() for f in body.fields]),
             json.dumps([m.model_dump() for m in body.transcript]),
+            body.notes,
             int(body.complete),
             doc_id,
             user.id,

@@ -10,9 +10,9 @@ Agreement, and more), asks about the relevant fields, previews the document
 live, and lets you download it as a PDF. The Mutual NDA has a rich, dedicated
 preview with full standard terms; the other documents use a generic
 cover-page preview. Your drafts are saved to your account as you chat, so you
-can reopen them from **My Documents** and pick up where you left off. Accounts
-and saved documents are backed by SQLite; the AI runs on the OpenAI platform
-via LiteLLM.
+can reopen them from **My Documents** and pick up where you left off, jot
+private **notes** on each one, and Save on demand. Accounts and saved documents
+are backed by SQLite; the AI runs on the OpenAI platform via LiteLLM.
 
 Every document is a draft: the app and the generated PDF both carry a notice
 that the output is not legal advice and should be reviewed by an attorney.

@@ -100,7 +100,7 @@ Frontend (`frontend/`):
 - It is created from scratch each time the Docker container is brought up.
 - It contains a `users` table backing user sign up and sign in, and a
   `documents` table holding each user's saved drafts (type, fields, transcript,
-  complete flag; fields and transcript stored as JSON).
+  notes, complete flag; fields and transcript stored as JSON).
 
 ### Start/stop scripts
 
@@ -207,8 +207,14 @@ Merged to `main` (PRs #4, #5, #6, #7):
   owner-scoped `/api/documents` CRUD endpoints. The frontend has a My Documents
   panel (new / load / delete); the current draft autosaves to the account after
   each chat turn (type, fields, and full transcript), so a returning user
-  reopens it and resumes the conversation. A draft / not-legal-advice disclaimer
-  shows in the app header and is stamped into every generated PDF.
+  reopens it and resumes the conversation. Each document also has a free-text
+  notes field with an explicit Save button. A draft / not-legal-advice
+  disclaimer shows in the app header and is stamped into every generated PDF.
+  Fixed a latent SQLite cross-thread bug (open the per-request connection with
+  `check_same_thread=False`) that caused intermittent 500s under the real ASGI
+  server and blocked the download flow. The UI was refreshed to a "drafting
+  desk" look: Spectral serif wordmark/eyebrows over an ink-navy letterhead with
+  a seal-gold accent, on a paper/ink token system.
 
 Verification for each was: `uv run pytest` (23 backend tests as of PL-7),
 `npm run build` (static export + TypeScript) plus `npm run lint`, and a Docker

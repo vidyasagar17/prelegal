@@ -33,6 +33,7 @@ class DocumentSave(CamelModel):
     document_type: str
     fields: list[FieldValue]
     transcript: list[ChatMessage]
+    notes: str = ""
     complete: bool = False
 
 
@@ -47,7 +48,8 @@ class DocumentSummary(CamelModel):
 
 
 class DocumentDetail(DocumentSummary):
-    """A full saved document, including its fields and transcript."""
+    """A full saved document, including its fields, transcript, and notes."""
 
     fields: list[FieldValue]
     transcript: list[ChatMessage]
+    notes: str

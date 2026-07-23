@@ -35,6 +35,19 @@ def test_create_and_get_document_roundtrips_state(client):
     assert fetched["fields"] == SAMPLE["fields"]
     assert fetched["transcript"] == SAMPLE["transcript"]
     assert fetched["complete"] is False
+    # Notes default to empty when omitted.
+    assert fetched["notes"] == ""
+
+
+def test_notes_are_saved_and_updated(client):
+    _signup(client)
+    doc_id = client.post(
+        "/api/documents", json={**SAMPLE, "notes": "Call legal on Monday"}
+    ).json()["id"]
+    assert client.get(f"/api/documents/{doc_id}").json()["notes"] == "Call legal on Monday"
+
+    client.put(f"/api/documents/{doc_id}", json={**SAMPLE, "notes": "Reviewed, ready"})
+    assert client.get(f"/api/documents/{doc_id}").json()["notes"] == "Reviewed, ready"
 
 
 def test_list_returns_summaries_newest_first(client):
