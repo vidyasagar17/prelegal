@@ -29,7 +29,11 @@ CREATE TABLE IF NOT EXISTS documents (
 
 
 def connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(settings.db_path)
+    # check_same_thread=False: FastAPI runs sync endpoints in a threadpool and
+    # may handle a request's dependency and body on different threads, so the
+    # per-request connection must be usable across threads. Each request still
+    # gets its own connection, so no connection is shared between requests.
+    conn = sqlite3.connect(settings.db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
