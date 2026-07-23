@@ -1,11 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AuthForm from "@/components/AuthForm";
 import DocumentChat from "@/components/DocumentChat";
+import DocumentsPanel from "@/components/DocumentsPanel";
 import GenericPreview from "@/components/GenericPreview";
 import NdaPreview from "@/components/NdaPreview";
-import { api, DocumentType, User } from "@/lib/api";
+import {
+  api,
+  ChatMessage,
+  DocumentSummary,
+  DocumentType,
+  mapToFields,
+  User,
+} from "@/lib/api";
 import { ndaDataFromFields } from "@/lib/documentFields";
 
 const NDA_ID = "mutual-nda";
@@ -35,19 +43,113 @@ export default function Home() {
   return <CreatorApp user={user} onSignedOut={() => setUser(null)} />;
 }
 
+type SaveState = "idle" | "saving" | "saved" | "error";
+
+/** Build a readable document title from its type and first filled-in field. */
+function makeTitle(doc: DocumentType, fields: Record<string, string>): string {
+  const first = doc.fields.map((f) => fields[f.key]).find((v) => v?.trim());
+  return first ? `${doc.name} — ${first.trim()}` : doc.name;
+}
+
 function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void }) {
   const [catalog, setCatalog] = useState<DocumentType[]>([]);
+  const [documents, setDocuments] = useState<DocumentSummary[]>([]);
+  const [currentId, setCurrentId] = useState<number | null>(null);
   const [documentType, setDocumentType] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
   const [complete, setComplete] = useState(false);
+  const [transcript, setTranscript] = useState<ChatMessage[]>([]);
+  const [chatKey, setChatKey] = useState(0);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // A ref mirrors currentId so back-to-back saves target the same row instead
+  // of creating duplicates before the state update lands.
+  const currentIdRef = useRef<number | null>(null);
+  const setCurrent = (id: number | null) => {
+    currentIdRef.current = id;
+    setCurrentId(id);
+  };
+
   useEffect(() => {
     api.catalog().then(setCatalog).catch(() => setError("Could not load document types."));
+    api.documents.list().then(setDocuments).catch(() => {});
   }, []);
 
   const doc = catalog.find((d) => d.id === documentType);
+
+  function resetToNew() {
+    setCurrent(null);
+    setDocumentType("");
+    setFields({});
+    setComplete(false);
+    setTranscript([]);
+    setSaveState("idle");
+    setChatKey((k) => k + 1);
+  }
+
+  async function handleResult(
+    type: string,
+    newFields: Record<string, string>,
+    isComplete: boolean,
+    messages: ChatMessage[],
+  ) {
+    setDocumentType(type);
+    setFields(newFields);
+    setComplete(isComplete);
+    setTranscript(messages);
+
+    const spec = catalog.find((d) => d.id === type);
+    if (!type || !spec) return; // Nothing worth saving until a type is chosen.
+
+    const payload = {
+      title: makeTitle(spec, newFields),
+      documentType: type,
+      fields: mapToFields(newFields),
+      transcript: messages,
+      complete: isComplete,
+    };
+    setSaveState("saving");
+    try {
+      if (currentIdRef.current == null) {
+        const created = await api.documents.create(payload);
+        setCurrent(created.id);
+      } else {
+        await api.documents.update(currentIdRef.current, payload);
+      }
+      setDocuments(await api.documents.list());
+      setSaveState("saved");
+    } catch {
+      setSaveState("error");
+    }
+  }
+
+  async function handleLoad(id: number) {
+    if (id === currentIdRef.current) return;
+    try {
+      const saved = await api.documents.get(id);
+      setCurrent(saved.id);
+      setDocumentType(saved.documentType);
+      setFields(Object.fromEntries(saved.fields.map((f) => [f.key, f.value])));
+      setComplete(saved.complete);
+      setTranscript(saved.transcript);
+      setSaveState("saved");
+      setChatKey((k) => k + 1); // Remount the chat with the restored transcript.
+    } catch {
+      setError("Could not open that document.");
+    }
+  }
+
+  async function handleDelete(id: number) {
+    try {
+      await api.documents.remove(id);
+      setDocuments((docs) => docs.filter((d) => d.id !== id));
+      if (id === currentIdRef.current) resetToNew();
+    } catch {
+      setError("Could not delete that document.");
+    }
+  }
 
   async function handleSignOut() {
     try {
@@ -96,6 +198,7 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <SaveIndicator state={saveState} />
             <button
               type="button"
               onClick={handleDownload}
@@ -127,6 +230,10 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
             </div>
           </div>
         </div>
+        <div className="border-t border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-800 sm:px-6">
+          Draft only. Documents generated here are not legal advice and should be
+          reviewed by a qualified attorney before use.
+        </div>
         {error && (
           <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-center text-xs text-red-700 sm:px-6">
             {error}
@@ -134,20 +241,33 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
         )}
       </header>
 
-      <main className="mx-auto grid w-full max-w-7xl flex-1 grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:min-h-0 lg:grid-cols-[minmax(0,440px)_1fr] lg:overflow-hidden">
+      <main className="mx-auto grid w-full max-w-7xl flex-1 grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:min-h-0 lg:grid-cols-[220px_minmax(0,420px)_1fr] lg:overflow-hidden">
+        <section className="flex flex-col lg:min-h-0">
+          <h2 className="mb-3 flex-none text-sm font-semibold uppercase tracking-wider text-slate-500">
+            My documents
+          </h2>
+          <div className="min-h-[16rem] lg:min-h-0 lg:flex-1">
+            <DocumentsPanel
+              documents={documents}
+              currentId={currentId}
+              onNew={resetToNew}
+              onLoad={handleLoad}
+              onDelete={handleDelete}
+            />
+          </div>
+        </section>
+
         <section className="flex flex-col lg:min-h-0">
           <h2 className="mb-3 flex-none text-sm font-semibold uppercase tracking-wider text-slate-500">
             Assistant
           </h2>
           <div className="min-h-[24rem] lg:min-h-0 lg:flex-1">
             <DocumentChat
+              key={chatKey}
               documentType={documentType}
               fields={fields}
-              onResult={(type, newFields, isComplete) => {
-                setDocumentType(type);
-                setFields(newFields);
-                setComplete(isComplete);
-              }}
+              initialMessages={transcript}
+              onResult={handleResult}
             />
           </div>
         </section>
@@ -187,6 +307,15 @@ function CreatorApp({ user, onSignedOut }: { user: User; onSignedOut: () => void
       </footer>
     </div>
   );
+}
+
+function SaveIndicator({ state }: { state: SaveState }) {
+  if (state === "idle") return null;
+  const label =
+    state === "saving" ? "Saving…" : state === "saved" ? "Saved" : "Not saved";
+  const color =
+    state === "error" ? "text-red-600" : "text-slate-400";
+  return <span className={`hidden text-xs sm:block ${color}`}>{label}</span>;
 }
 
 async function downloadBlob(blob: Blob, filename: string) {

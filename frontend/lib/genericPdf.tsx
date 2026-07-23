@@ -60,6 +60,7 @@ function DocumentPdf({
           </View>
         ))}
         <Text style={styles.footer} fixed>
+          DRAFT — not legal advice. Review by a qualified attorney before use.
           Based on the Common Paper {doc.name} template, free to use under CC BY 4.0.
         </Text>
       </Page>

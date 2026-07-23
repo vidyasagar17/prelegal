@@ -13,11 +13,27 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS documents (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title         TEXT NOT NULL,
+    document_type TEXT NOT NULL,
+    fields        TEXT NOT NULL,  -- JSON: [{key, value}, ...]
+    transcript    TEXT NOT NULL,  -- JSON: [{role, content}, ...]
+    complete      INTEGER NOT NULL DEFAULT 0,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
 """
 
 
 def connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(settings.db_path)
+    # check_same_thread=False: FastAPI runs sync endpoints in a threadpool and
+    # may handle a request's dependency and body on different threads, so the
+    # per-request connection must be usable across threads. Each request still
+    # gets its own connection, so no connection is shared between requests.
+    conn = sqlite3.connect(settings.db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 

@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import settings
 from .db import init_db
-from .routers import auth, chat, health
+from .routers import auth, chat, documents, health
 
 
 @asynccontextmanager
@@ -22,6 +22,7 @@ app = FastAPI(title="Prelegal", lifespan=lifespan)
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(chat.router)
+app.include_router(documents.router)
 
 # Serve the statically-exported frontend at the root. Registered after the API
 # routers so /api/* keeps precedence. Absent during backend-only test runs.

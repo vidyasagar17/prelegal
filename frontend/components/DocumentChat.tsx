@@ -6,17 +6,31 @@ import { api, ApiError, ChatMessage, fieldsToMap, mapToFields } from "@/lib/api"
 interface Props {
   documentType: string;
   fields: Record<string, string>;
-  onResult: (documentType: string, fields: Record<string, string>, complete: boolean) => void;
+  initialMessages?: ChatMessage[];
+  onResult: (
+    documentType: string,
+    fields: Record<string, string>,
+    complete: boolean,
+    messages: ChatMessage[],
+  ) => void | Promise<void>;
 }
 
 /**
  * Freeform chat that figures out which document the user wants and gathers its
  * fields. Each turn sends the transcript plus the current document type and
- * fields; the model's updated values are lifted up so the live preview stays in
- * sync.
+ * fields; the model's updated values and the transcript are lifted up so the
+ * live preview stays in sync and the parent can persist the draft.
+ *
+ * When initialMessages is given (loading a saved document) the chat resumes
+ * from that transcript instead of the greeting.
  */
-export default function DocumentChat({ documentType, fields, onResult }: Props) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export default function DocumentChat({
+  documentType,
+  fields,
+  initialMessages,
+  onResult,
+}: Props) {
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,10 +39,13 @@ export default function DocumentChat({ documentType, fields, onResult }: Props) 
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (initialMessages && initialMessages.length > 0) return;
     api
       .greeting()
       .then((g) => setMessages([{ role: "assistant", content: g.message }]))
       .catch(() => setError("Could not start the chat. Please refresh."));
+    // Runs once on mount; a saved document is loaded by remounting with a key.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -47,8 +64,11 @@ export default function DocumentChat({ documentType, fields, onResult }: Props) 
     setError(null);
     try {
       const result = await api.chat(next, documentType, mapToFields(fields));
-      setMessages([...next, { role: "assistant", content: result.reply }]);
-      onResult(result.documentType, fieldsToMap(result.fields), result.complete);
+      const withReply = [...next, { role: "assistant" as const, content: result.reply }];
+      setMessages(withReply);
+      // Awaited so the input stays disabled until the draft is persisted, which
+      // keeps a fast follow-up from creating a duplicate saved document.
+      await onResult(result.documentType, fieldsToMap(result.fields), result.complete, withReply);
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Something went wrong. Please try again.",
