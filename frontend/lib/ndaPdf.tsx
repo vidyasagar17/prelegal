@@ -173,6 +173,7 @@ function NdaDocument({ data }: { data: NdaData }) {
         </View>
 
         <Text style={styles.footer} fixed>
+          DRAFT — not legal advice. Review by a qualified attorney before use.
           Common Paper Mutual Non-Disclosure Agreement (Version 1.0), free to use
           under CC BY 4.0. Governed by the laws of {governingLawText(data)};
           courts located in {jurisdictionText(data)}.

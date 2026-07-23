@@ -9,8 +9,13 @@ supported agreements** you need (Mutual NDA, Cloud Service Agreement, Pilot
 Agreement, and more), asks about the relevant fields, previews the document
 live, and lets you download it as a PDF. The Mutual NDA has a rich, dedicated
 preview with full standard terms; the other documents use a generic
-cover-page preview. Accounts are backed by SQLite; the AI runs on the OpenAI
-platform via LiteLLM.
+cover-page preview. Your drafts are saved to your account as you chat, so you
+can reopen them from **My Documents** and pick up where you left off. Accounts
+and saved documents are backed by SQLite; the AI runs on the OpenAI platform
+via LiteLLM.
+
+Every document is a draft: the app and the generated PDF both carry a notice
+that the output is not legal advice and should be reviewed by an attorney.
 
 ## Architecture
 
@@ -58,6 +63,12 @@ http://localhost:8000.
 - `GET  /api/chat/greeting` — the assistant's opening message (auth required)
 - `POST /api/chat/message` — send the transcript and current fields, get the
   reply plus updated fields (auth required)
+- `GET  /api/documents` — list the current user's saved documents (auth required)
+- `POST /api/documents` — save a new document (auth required)
+- `GET  /api/documents/{id}` — load a saved document, including its transcript
+  and fields (auth required)
+- `PUT  /api/documents/{id}` — update a saved document (auth required)
+- `DELETE /api/documents/{id}` — delete a saved document (auth required)
 
 ## Development
 

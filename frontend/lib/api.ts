@@ -36,6 +36,29 @@ export interface ChatResult {
   complete: boolean;
 }
 
+// A document saved to the user's account. The summary omits the heavy
+// fields/transcript payload; the detail includes everything needed to resume.
+export interface DocumentSummary {
+  id: number;
+  title: string;
+  documentType: string;
+  complete: boolean;
+  updatedAt: string;
+}
+
+export interface SavedDocument extends DocumentSummary {
+  fields: FieldValue[];
+  transcript: ChatMessage[];
+}
+
+export interface DocumentSave {
+  title: string;
+  documentType: string;
+  fields: FieldValue[];
+  transcript: ChatMessage[];
+  complete: boolean;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -60,6 +83,8 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
     }
     throw new ApiError(res.status, detail);
   }
+  // 204 No Content (e.g. DELETE) has no body to parse.
+  if (res.status === 204) return undefined as T;
   return res.json();
 }
 
@@ -79,6 +104,16 @@ export const api = {
       method: "POST",
       body: body({ messages, documentType, fields }),
     }),
+  documents: {
+    list: () => request<DocumentSummary[]>("/api/documents"),
+    get: (id: number) => request<SavedDocument>(`/api/documents/${id}`),
+    create: (doc: DocumentSave) =>
+      request<SavedDocument>("/api/documents", { method: "POST", body: body(doc) }),
+    update: (id: number, doc: DocumentSave) =>
+      request<SavedDocument>(`/api/documents/${id}`, { method: "PUT", body: body(doc) }),
+    remove: (id: number) =>
+      request<void>(`/api/documents/${id}`, { method: "DELETE" }),
+  },
 };
 
 // Fields travel over the wire as a list; the UI works with a plain map.
